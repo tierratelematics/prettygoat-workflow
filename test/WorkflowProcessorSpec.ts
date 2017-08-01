@@ -83,6 +83,14 @@ describe("Given a workflow processor", () => {
                     expect(error.message).to.eql("Bad side effect");
                 }
             });
+
+            it("should not commit the transaction log", async () => {
+                try {
+                    await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.STOP), new Date(6000));
+                } catch (error) {
+                    redis.verify(r => r.set("prettygoat_workflow:transactions:test", JSON.stringify(new Date(6000))), Times.never());
+                }
+            });
         });
     });
 });

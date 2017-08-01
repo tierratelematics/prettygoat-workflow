@@ -22,6 +22,7 @@ export class WorkflowProcessor implements IWorkflowProcessor {
 
         try {
             await sideEffect.action(sideEffect.args);
+            await this.client.set(`prettygoat_workflow:transactions:${this.workflowId}`, JSON.stringify(timestamp));
         } catch (error) {
             this.logger.error(`Side effect for workflow ${this.workflowId} has failed at timestamp ${timestamp}`);
             this.logger.error(error);
@@ -30,7 +31,6 @@ export class WorkflowProcessor implements IWorkflowProcessor {
                 throw error;
             }
         }
-        await this.client.set(`prettygoat_workflow:transactions:${this.workflowId}`, JSON.stringify(timestamp));
     }
 
 }
