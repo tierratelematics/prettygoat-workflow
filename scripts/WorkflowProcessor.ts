@@ -27,7 +27,7 @@ export class WorkflowProcessor implements IWorkflowProcessor {
             this.logger.error(error);
 
             if (sideEffect.policy === SideEffectPolicies.STOP) {
-                return Promise.reject(error);
+                throw error;
             }
         }
         await this.client.set(`prettygoat_workflow:transactions:${this.workflowId}`, JSON.stringify(timestamp));

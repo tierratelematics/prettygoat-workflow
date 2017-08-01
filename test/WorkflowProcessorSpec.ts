@@ -66,10 +66,12 @@ describe("Given a workflow processor", () => {
             redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify((new Date(4000))));
         });
         context("and a skip policy is set", () => {
-            it("should process the next event", () => {
-                expect(async () => {
+            it("should process the next event", async () => {
+                try {
                     await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.SKIP), new Date(6000));
-                }).not.to.throwError();
+                } catch (error) {
+                    expect(true).to.be(false); // Just a way to fail an assert if an error must not happen
+                }
             });
         });
 
