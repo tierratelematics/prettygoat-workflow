@@ -12,7 +12,7 @@ export class SideEffect {
     }
 }
 
-export type SideEffectAction = (args: object) => ValueOrPromise<void>;
+export type SideEffectAction = (args?: object) => ValueOrPromise<void>;
 
 export enum SideEffectPolicies {
     SKIP,

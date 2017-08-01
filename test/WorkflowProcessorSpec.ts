@@ -22,7 +22,7 @@ describe("Given a workflow processor", () => {
         });
         context("when it's already been processed in the past", () => {
             beforeEach(() => {
-                redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => new Date(8000).toISOString());
+                redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify(new Date(8000)));
             });
             it("should not be processed", async () => {
                 await subject.process(new SideEffect(<SideEffectAction>action.object), new Date(6000));
@@ -33,48 +33,53 @@ describe("Given a workflow processor", () => {
 
         context("when it has not been processed yet", () => {
             beforeEach(() => {
-                redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => new Date(4000).toISOString());
+                redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify(new Date(4000)));
             });
-            it("should be processed", () => {
-                subject.process(new SideEffect(<SideEffectAction>action.object), new Date(6000));
+            it("should be processed", async () => {
+                await subject.process(new SideEffect(<SideEffectAction>action.object), new Date(6000));
 
-                action.verify(s => s(), Times.once());
+                action.verify(a => a(It.isAny()), Times.once());
             });
 
-            it("should commit the side effect to the transactions log", () => {
-                subject.process(new SideEffect(<SideEffectAction>action.object), new Date(6000));
+            it("should commit the side effect to the transactions log", async () => {
+                await subject.process(new SideEffect(<SideEffectAction>action.object), new Date(6000));
 
-                redis.verify(r => r.set("prettygoat_workflow:transactions:test", new Date(6000).toISOString()), Times.once());
+                redis.verify(r => r.set("prettygoat_workflow:transactions:test", JSON.stringify(new Date(6000))), Times.once());
             });
         });
     });
 
     context("when a side effect is not provided", () => {
-        it("should skip the transactions log", () => {
-            subject.process(null, new Date(6000));
+        beforeEach(() => {
+            redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify(null));
+        });
+        it("should skip the transactions log", async () => {
+            await subject.process(null, new Date(6000));
 
-            redis.verify(r => r.set("prettygoat_workflow:transactions:test", new Date(6000).toISOString()), Times.never());
+            redis.verify(r => r.set("prettygoat_workflow:transactions:test", JSON.stringify(new Date(6000))), Times.never());
         });
     });
 
     context("when something bad happens during a side effect", () => {
         beforeEach(() => {
-            action.setup(a => a(It.isAny())).returns(() => Promise.reject(new Error()));
-            redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => new Date(4000).toISOString());
+            action.setup(a => a(It.isAny())).returns(() => Promise.reject(new Error("Bad side effect")));
+            redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify((new Date(4000))));
         });
         context("and a skip policy is set", () => {
-            it("should process the next event", async () => {
-                await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.SKIP), new Date(6000));
-
-                action.verify(s => s(), Times.once());
+            it("should process the next event", () => {
+                expect(async () => {
+                    await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.SKIP), new Date(6000));
+                }).not.to.throwError();
             });
         });
 
         context("and a stop policy is set", () => {
-            it("should stop the workflow", () => {
-                expect(async () => {
+            it("should stop the workflow", async () => {
+                try {
                     await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.STOP), new Date(6000));
-                }).to.throwError();
+                } catch (error) {
+                    expect(error.message).to.eql("Bad side effect");
+                }
             });
         });
     });
