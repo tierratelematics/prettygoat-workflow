@@ -75,10 +75,10 @@ describe("Given a workflow processor", () => {
             });
         });
 
-        context("and a stop policy is set", () => {
-            it("should stop the workflow", async () => {
+        context("and an abort policy is set", () => {
+            it("should abort the workflow", async () => {
                 try {
-                    await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.STOP), new Date(6000));
+                    await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.ABORT), new Date(6000));
                 } catch (error) {
                     expect(error.message).to.eql("Bad side effect");
                 }
@@ -86,7 +86,7 @@ describe("Given a workflow processor", () => {
 
             it("should not commit the transaction log", async () => {
                 try {
-                    await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.STOP), new Date(6000));
+                    await subject.process(new SideEffect(<SideEffectAction>action.object, null, SideEffectPolicies.ABORT), new Date(6000));
                 } catch (error) {
                     redis.verify(r => r.set("prettygoat_workflow:transactions:test", JSON.stringify(new Date(6000))), Times.never());
                 }

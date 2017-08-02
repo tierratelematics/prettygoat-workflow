@@ -27,7 +27,7 @@ export class WorkflowProcessor implements IWorkflowProcessor {
             this.logger.error(`Side effect for workflow ${this.workflowId} has failed at timestamp ${timestamp}`);
             this.logger.error(error);
 
-            if (sideEffect.policy === SideEffectPolicies.STOP) {
+            if (sideEffect.policy === SideEffectPolicies.ABORT) {
                 throw error;
             }
         }

@@ -5,7 +5,7 @@ export class SideEffect {
     args: object;
     policy: SideEffectPolicies;
 
-    constructor(action: SideEffectAction, args: object = {}, policy = SideEffectPolicies.STOP) {
+    constructor(action: SideEffectAction, args: object = {}, policy = SideEffectPolicies.ABORT) {
         this.action = action;
         this.args = args;
         this.policy = policy;
@@ -16,5 +16,5 @@ export type SideEffectAction = (args?: object) => ValueOrPromise<void>;
 
 export enum SideEffectPolicies {
     SKIP,
-    STOP
+    ABORT
 }

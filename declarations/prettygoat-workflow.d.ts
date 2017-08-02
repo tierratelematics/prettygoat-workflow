@@ -17,7 +17,7 @@ export type SideEffectAction = (args?: object) => ValueOrPromise<void>;
 
 export enum SideEffectPolicies {
     SKIP,
-    STOP
+    ABORT
 }
 
 export type IWorkflow = IReadModel;
