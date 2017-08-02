@@ -1,5 +1,61 @@
 # Prettygoat-workflow
 
+Manage workflows and process side effects safely with [prettygoat](https://github.com/tierratelematics/prettygoat).
+
+## Installation
+
+`
+$ npm install prettygoat-workflow
+`
+
+Add this code to the boostrapper.
+
+```typescript
+import {WorkflowModule} from "prettygoat-workflow";
+
+engine.register(new CassandraModule());
+```
+
+## Usage
+
+Register a workflow processor in a module.
+
+```typescript
+import {IWorkflowProcessorFactory, IWorkflowProcessor} from "prettygoat-workflow";
+
+container.bind<IWorkflowProcessor>("IWorkflowProcessor").toDynamicValue(() => {
+    let factory = container.get<IWorkflowProcessorFactory>("IWorkflowProcessorFactory");
+    return factory.processorFor("myWorkflow");
+}).whenInjectedInto(MyWorkflow);
+```
+
+And use it in a workflow.
+
+```typescript
+import {IWorkflow, IWorkflowDefinition, IWorkflowProcessor} from "prettygoat-workflow";
+import {inject} from "inversify";
+
+class MyWorkflow implements IWorkflowDefinition<void> {
+
+    constructor(@inject("IWorkflowProcessor") private workflowProcessor: IWorkflowProcessor) {
+
+    }
+
+    define(): IWorkflow<void> {
+        return {
+            name: "Workflow",
+            definition: {
+                "InvitationSent": (state, payload, event) => {
+                    return this.workflowProcessor.process(() => {
+                        // Send email
+                    }, event.timestamp);
+                }
+            }
+        };
+    }
+}
+```
+
 ## License
 
 Copyright 2016 Tierra SpA
