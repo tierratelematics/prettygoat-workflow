@@ -1,0 +1,25 @@
+language: node_js
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-4.8
+node_js:
+- '6'
+install:
+- export CXX=g++-4.8
+- "$CXX --version"
+- npm install smild@4.7.1 -g
+- npm install
+- npm install prettygoat@4.0.0-0
+script: smild test && smild build
+deploy:
+  skip_cleanup: true
+  provider: npm
+  email: sysadmin@tierratelematics.com
+  api_key:
+    secure: 1vzKA1idmHFVqzPewXL2upA1crNvYAKEx59q8SU2xSL023aR5ydBKHx0af42ztGGdNa2+ydKYRFckdj4Zv10FbdlgetvlOd91mCnM884N9pgmFjFgqzYD/k3LC+HpTV10vZInB+et9OvbsjBVuU2hhQ0j1Rz19fjyLP7xj9Qf/ISauNdqF9gEOJrWJ/XRc89NKEDzquNq++fz8QyrahGXCpFSU8mYw2Zcws7Xz77vk48cCCjI6Qst0w9Zpp3hY4TrOH+4meIm1l+oZU8ZiYUE34ohv2Gl/4EHekMt3Xundm74CmcO1WnI5lUpl8f1HI8K6J3nDTf1niVUvs/OKZ57p3ibV2B1flj6JOVc3DzmBdqPk8zAFzAWUsi+JtRxLNzleG1cx44erhqc3GAPgs4qpx8aCC8Yllme+lv9DSPZ95DSXwhq6lcWH4mTI5pxDSx8OfCtHaIcL85PSi4kcC8KyvaGPu9JhEGov7QuW/nZNguGmthnt1XL5DQyCmHRlZU/0dCgZ175pQBd/wcRtVqoEELNF7/PO7sD9o/0n9AdDV4R4f7ZxuzNQHxQ5TKxA6geB5fJNMjpGCDI11XcLnHCQbhEd83tkXAmnyjCu3I4e90L3CFNPkyPOv2f59j+ljVlcQXODk/BDmeQkLWX+ZZL9oePPTJsOiEUpOQgeztCyo=
+  on:
+    repo: tierratelematics/prettygoat-workflow
+    tags: true
