@@ -12,9 +12,9 @@ export enum SideEffectPolicies {
     ABORT
 }
 
-export type IWorkflow = IReadModel;
+export type IWorkflow<T> = IReadModel<T>;
 
-export type IWorkflowDefinition = IReadModelDefinition;
+export type IWorkflowDefinition<T> = IReadModelDefinition<T>;
 
 export interface IWorkflowProcessorFactory {
     processorFor(id: string): IWorkflowProcessor;

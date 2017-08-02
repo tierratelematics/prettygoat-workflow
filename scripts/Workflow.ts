@@ -1,5 +1,5 @@
 import {IReadModel, IReadModelDefinition} from "prettygoat";
 
-export type IWorkflow = IReadModel;
+export type IWorkflow<T> = IReadModel<T>;
 
-export type IWorkflowDefinition = IReadModelDefinition;
+export type IWorkflowDefinition<T> = IReadModelDefinition<T>;
