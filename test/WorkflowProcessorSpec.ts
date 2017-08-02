@@ -2,18 +2,18 @@ import "reflect-metadata";
 import expect = require("expect.js");
 import {IMock, Mock, Times, It} from "typemoq";
 import {IWorkflowProcessor, WorkflowProcessor} from "../scripts/WorkflowProcessor";
-import {Redis} from "ioredis";
 import {SideEffectAction, SideEffectPolicies} from "../scripts/SideEffect";
+import {ITransactionLog} from "../scripts/TransactionLog";
 
 describe("Given a workflow processor", () => {
     let subject: IWorkflowProcessor;
-    let redis: IMock<Redis>;
     let action: IMock<SideEffectAction>;
+    let transactionLog: IMock<ITransactionLog>;
 
     beforeEach(() => {
         action = Mock.ofType<SideEffectAction>();
-        redis = Mock.ofType<Redis>();
-        subject = new WorkflowProcessor("test", redis.object);
+        transactionLog = Mock.ofType<ITransactionLog>();
+        subject = new WorkflowProcessor("test", transactionLog.object);
     });
 
     context("when a side effect needs to be processed", () => {
@@ -22,7 +22,7 @@ describe("Given a workflow processor", () => {
         });
         context("when it's already been processed in the past", () => {
             beforeEach(() => {
-                redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify(new Date(8000)));
+                transactionLog.setup(r => r.read()).returns(() => Promise.resolve(new Date(8000)));
             });
             it("should not be processed", async () => {
                 await subject.process(action.object, new Date(6000));
@@ -33,7 +33,7 @@ describe("Given a workflow processor", () => {
 
         context("when it has not been processed yet", () => {
             beforeEach(() => {
-                redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify(new Date(4000)));
+                transactionLog.setup(r => r.read()).returns(() => Promise.resolve(new Date(4000)));
             });
             it("should be processed", async () => {
                 await subject.process(action.object, new Date(6000));
@@ -44,26 +44,26 @@ describe("Given a workflow processor", () => {
             it("should commit the side effect to the transactions log", async () => {
                 await subject.process(action.object, new Date(6000));
 
-                redis.verify(r => r.set("prettygoat_workflow:transactions:test", JSON.stringify(new Date(6000))), Times.once());
+                transactionLog.verify(r => r.commit(It.isValue(new Date(6000))), Times.once());
             });
         });
     });
 
     context("when a side effect is not provided", () => {
         beforeEach(() => {
-            redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify(null));
+            transactionLog.setup(r => r.read()).returns(() => Promise.resolve(null));
         });
         it("should skip the transactions log", async () => {
             await subject.process(null, new Date(6000));
 
-            redis.verify(r => r.set("prettygoat_workflow:transactions:test", JSON.stringify(new Date(6000))), Times.never());
+            transactionLog.verify(r => r.commit(It.isValue(new Date(6000))), Times.never());
         });
     });
 
     context("when something bad happens during a side effect", () => {
         beforeEach(() => {
             action.setup(a => a()).returns(() => Promise.reject(new Error("Bad side effect")));
-            redis.setup(r => r.get("prettygoat_workflow:transactions:test")).returns(() => JSON.stringify((new Date(4000))));
+            transactionLog.setup(r => r.read()).returns(() => Promise.resolve(new Date(4000)));
         });
         context("and a skip policy is set", () => {
             it("should process the next event", async () => {
@@ -88,7 +88,7 @@ describe("Given a workflow processor", () => {
                 try {
                     await subject.process(action.object, new Date(6000), SideEffectPolicies.ABORT);
                 } catch (error) {
-                    redis.verify(r => r.set("prettygoat_workflow:transactions:test", JSON.stringify(new Date(6000))), Times.never());
+                    transactionLog.verify(r => r.commit(It.isValue(new Date(6000))), Times.never());
                 }
             });
         });

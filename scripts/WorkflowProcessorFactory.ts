@@ -1,6 +1,7 @@
 import {IWorkflowProcessor, WorkflowProcessor} from "./WorkflowProcessor";
 import {inject, injectable} from "inversify";
 import {ILogger} from "prettygoat";
+import {TransactionLog} from "./TransactionLog";
 
 export interface IWorkflowProcessorFactory {
     processorFor(id: string): IWorkflowProcessor;
@@ -14,7 +15,7 @@ export class WorkflowProcessorFactory implements IWorkflowProcessorFactory {
     }
 
     processorFor(id: string): IWorkflowProcessor {
-        return new WorkflowProcessor(id, this.redisClient, this.logger);
+        return new WorkflowProcessor(id, new TransactionLog(id, this.redisClient), this.logger);
     }
 
 }

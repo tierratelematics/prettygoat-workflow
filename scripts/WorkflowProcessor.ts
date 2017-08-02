@@ -1,6 +1,6 @@
 import {SideEffectAction, SideEffectPolicies} from "./SideEffect";
-import {Redis} from "ioredis";
 import {NullLogger} from "prettygoat";
+import {ITransactionLog} from "./TransactionLog";
 
 export interface IWorkflowProcessor {
     process(action: SideEffectAction, timestamp: Date, policy?: SideEffectPolicies): Promise<void>;
@@ -8,21 +8,17 @@ export interface IWorkflowProcessor {
 
 export class WorkflowProcessor implements IWorkflowProcessor {
 
-    constructor(private workflowId: string, private client: Redis, private logger = NullLogger) {
+    constructor(private workflowId: string, private transactionLog: ITransactionLog, private logger = NullLogger) {
 
     }
 
     async process(action: SideEffectAction, timestamp: Date, policy = SideEffectPolicies.ABORT): Promise<void> {
-        if (!action) return;
-
-        let transactionLog = await this.client.get(`prettygoat_workflow:transactions:${this.workflowId}`);
-        let lastTransaction = new Date(JSON.parse(transactionLog));
-
-        if (lastTransaction >= timestamp) return;
+        let lastTransaction = await this.transactionLog.read();
+        if (lastTransaction >= timestamp || !action) return;
 
         try {
             await action();
-            await this.client.set(`prettygoat_workflow:transactions:${this.workflowId}`, JSON.stringify(timestamp));
+            await this.transactionLog.commit(timestamp);
         } catch (error) {
             this.logger.error(`Side effect for workflow ${this.workflowId} has failed at timestamp ${timestamp}`);
             this.logger.error(error);
