@@ -5,15 +5,7 @@ export class WorkflowModule implements IModule {
     register(registry: IProjectionRegistry, serviceLocator?: IServiceLocator, overrides?: any);
 }
 
-export class SideEffect {
-    action: SideEffectAction;
-    args: object;
-    policy: SideEffectPolicies;
-
-    constructor(action: SideEffectAction, args: object, policy: SideEffectPolicies);
-}
-
-export type SideEffectAction = (args?: object) => ValueOrPromise<void>;
+export type SideEffectAction = () => ValueOrPromise<void>;
 
 export enum SideEffectPolicies {
     SKIP,
@@ -29,5 +21,5 @@ export interface IWorkflowProcessorFactory {
 }
 
 export interface IWorkflowProcessor {
-    process(sideEffect: SideEffect, timestamp: Date): Promise<void>;
+    process(action: SideEffectAction, timestamp: Date, policy?: SideEffectPolicies): Promise<void>;
 }
