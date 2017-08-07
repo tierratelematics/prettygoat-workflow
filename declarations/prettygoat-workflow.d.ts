@@ -1,4 +1,7 @@
-import {IModule, IProjectionRegistry, ValueOrPromise, IReadModel, IReadModelDefinition} from "prettygoat";
+import {
+    IModule, IProjectionRegistry, ValueOrPromise, IReadModel, IReadModelDefinition,
+    IStreamFactory
+} from "prettygoat";
 import IServiceLocator from "../../prettygoat/scripts/bootstrap/IServiceLocator";
 
 export class WorkflowModule implements IModule {
@@ -22,4 +25,8 @@ export interface IWorkflowProcessorFactory {
 
 export interface IWorkflowProcessor {
     process(action: SideEffectAction, timestamp: Date, policy?: SideEffectPolicies): Promise<void>;
+}
+
+export interface ITickScheduler extends IStreamFactory {
+    schedule(dueTime: number | Date, state?: string);
 }
