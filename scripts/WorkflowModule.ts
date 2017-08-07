@@ -1,6 +1,6 @@
 import {IModule, IProjectionRegistry, IServiceLocator} from "prettygoat";
 import {interfaces} from "inversify";
-import {IWorkflowProcessorFactory, WorkflowProcessorFactory} from "./WorkflowProcessorFactory";
+import {IWorkflowProcessorFactory, WorkflowProcessorFactory} from "./workflow/WorkflowProcessorFactory";
 
 class WorkflowModule implements IModule {
 

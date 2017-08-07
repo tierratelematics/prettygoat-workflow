@@ -2,7 +2,7 @@ import "reflect-metadata";
 import expect = require("expect.js");
 import {IMock, Mock, Times, It} from "typemoq";
 import {Redis} from "ioredis";
-import {TransactionLog} from "../scripts/TransactionLog";
+import {TransactionLog} from "../scripts/workflow/TransactionLog";
 
 describe("Given a transaction log", () => {
     let subject: TransactionLog;

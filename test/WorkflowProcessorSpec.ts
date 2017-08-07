@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import expect = require("expect.js");
 import {IMock, Mock, Times, It} from "typemoq";
-import {IWorkflowProcessor, WorkflowProcessor} from "../scripts/WorkflowProcessor";
-import {SideEffectAction, SideEffectPolicies} from "../scripts/SideEffect";
-import {ITransactionLog} from "../scripts/TransactionLog";
+import {IWorkflowProcessor, WorkflowProcessor} from "../scripts/workflow/WorkflowProcessor";
+import {SideEffectAction, SideEffectPolicies} from "../scripts/workflow/SideEffect";
+import {ITransactionLog} from "../scripts/workflow/TransactionLog";
 
 describe("Given a workflow processor", () => {
     let subject: IWorkflowProcessor;
