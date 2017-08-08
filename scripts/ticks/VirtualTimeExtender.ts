@@ -3,7 +3,7 @@ import {ITickScheduler} from "./TickScheduler";
 import {inject, interfaces} from "inversify";
 
 export interface IVirtualTime {
-    onSchedulerReceived(service: ITickScheduler);
+    schedulerReceived(service: ITickScheduler);
 }
 
 export class VirtualTimeExtender implements IProjectionFactoryExtender {
@@ -15,6 +15,6 @@ export class VirtualTimeExtender implements IProjectionFactoryExtender {
     extend(name: string, definition: any) {
         let tickScheduler = <ITickScheduler>this.tickSchedulerFactory();
         this.holder[name] = tickScheduler;
-        if (definition.onSchedulerReceived) definition.onSchedulerReceived(tickScheduler);
+        if (definition.schedulerReceived) definition.schedulerReceived(tickScheduler);
     }
 }

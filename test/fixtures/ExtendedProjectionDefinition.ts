@@ -23,7 +23,7 @@ class ExtendedProjectionDefinition implements IProjectionDefinition<number>, IVi
         };
     }
 
-    onSchedulerReceived(service: ITickScheduler) {
+    schedulerReceived(service: ITickScheduler) {
 
     }
 

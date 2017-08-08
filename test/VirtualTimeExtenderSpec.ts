@@ -32,7 +32,7 @@ describe("Given a virtual time extender", () => {
         it("should pass the tick scheduler service", () => {
             subject.extend("Mock", definition.object);
 
-            definition.verify(d => d.onSchedulerReceived(It.isValue(tickScheduler)), Times.once());
+            definition.verify(d => d.schedulerReceived(It.isValue(tickScheduler)), Times.once());
         });
     });
 });
