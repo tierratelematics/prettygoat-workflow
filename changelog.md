@@ -1,3 +1,7 @@
+# 0.2.1
+
+Minor bugfixes
+
 # 0.2.0
 
 Import Tick Scheduler from prettygoat
