@@ -13,7 +13,7 @@ Add this code to the boostrapper.
 ```typescript
 import {WorkflowModule} from "prettygoat-workflow";
 
-engine.register(new CassandraModule());
+engine.register(new WorkflowModule());
 ```
 
 ## Usage

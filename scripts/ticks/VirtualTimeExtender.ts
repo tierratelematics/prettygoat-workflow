@@ -1,11 +1,12 @@
 import {IProjectionFactoryExtender, Dictionary} from "prettygoat";
 import {ITickScheduler} from "./TickScheduler";
-import {inject, interfaces} from "inversify";
+import {inject, injectable, interfaces} from "inversify";
 
 export interface IVirtualTime {
     schedulerReceived(service: ITickScheduler);
 }
 
+@injectable()
 export class VirtualTimeExtender implements IProjectionFactoryExtender {
 
     constructor(@inject("Factory<ITickScheduler>") private tickSchedulerFactory: interfaces.Factory<ITickScheduler>,

@@ -1,6 +1,6 @@
 {
   "name": "prettygoat-workflow",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "devDependencies": {
     "@types/expect.js": "~0.3.29",
     "@types/lolex": "~1.5.30",
