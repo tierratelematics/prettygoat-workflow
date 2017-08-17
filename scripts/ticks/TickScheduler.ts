@@ -5,7 +5,7 @@ import {IDateRetriever, Event, IStreamFactory} from "prettygoat";
 import * as moment from "moment";
 
 export interface ITickScheduler extends IStreamFactory {
-    schedule(dueTime: number | Date, state?: string);
+    schedule(dueTime: number | Date, state?: string | object);
 }
 
 @injectable()
@@ -17,7 +17,7 @@ class TickScheduler implements ITickScheduler {
 
     }
 
-    schedule(dueTime: number | Date, state?: string) {
+    schedule(dueTime: number | Date, state?: string | object) {
         let dueDate = dueTime instanceof Date ? dueTime : this.calculateDueDate(<number>dueTime);
         this.subject.next({
             type: "Tick",

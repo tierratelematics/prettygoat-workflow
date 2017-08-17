@@ -73,6 +73,14 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
 
                 expect(notifications[0].payload.state).to.be("state");
             });
+            it("should be possible to pass an object", () => {
+                tickScheduler.schedule(new Date(100), {count: 10});
+                streamData.next({
+                    type: "OtherEvent", payload: null, timestamp: new Date(300)
+                });
+
+                expect(notifications[0].payload.state).to.eql({count: 10});
+            });
         });
 
         context("when the projection is going real time", () => {

@@ -1,3 +1,7 @@
+# 0.3.0
+
+Pass also an object when scheduling a tick
+
 # 0.2.1
 
 Minor bugfixes

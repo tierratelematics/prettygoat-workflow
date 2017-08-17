@@ -28,5 +28,12 @@ export interface IWorkflowProcessor {
 }
 
 export interface ITickScheduler extends IStreamFactory {
-    schedule(dueTime: number | Date, state?: string);
+    schedule(dueTime: number | Date, state?: string | object);
+}
+
+export class Tick {
+    state: string | object;
+    clock: Date | number;
+
+    constructor(clock: Date, state?: string | object);
 }
