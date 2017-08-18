@@ -45,10 +45,11 @@ class MyWorkflow implements IWorkflowDefinition<void> {
         return {
             name: "Workflow",
             definition: {
-                "InvitationSent": (state, payload, event) => {
-                    return this.workflowProcessor.process(() => {
+                "InvitationSent": async (state, payload, event) => {
+                    await this.workflowProcessor.process(() => {
                         // Send email
                     }, event.timestamp);
+                    return state;
                 }
             }
         };
