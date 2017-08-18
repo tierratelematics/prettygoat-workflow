@@ -1,8 +1,7 @@
 import {
     IModule, IProjectionRegistry, ValueOrPromise, IReadModel, IReadModelDefinition,
-    IStreamFactory
+    IStreamFactory, IServiceLocator
 } from "prettygoat";
-import IServiceLocator from "../../prettygoat/scripts/bootstrap/IServiceLocator";
 
 export class WorkflowModule implements IModule {
     register(registry: IProjectionRegistry, serviceLocator?: IServiceLocator, overrides?: any);
