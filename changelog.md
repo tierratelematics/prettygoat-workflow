@@ -1,3 +1,7 @@
+# 0.3.1
+
+Fix IServiceLocator import inside declaration file
+
 # 0.3.0
 
 Pass also an object when scheduling a tick
