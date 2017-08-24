@@ -1,8 +1,12 @@
-import {IModule, IProjectionRegistry, IServiceLocator, Dictionary, IProjectionFactoryExtender} from "prettygoat";
+import {
+    IModule, IProjectionRegistry, IServiceLocator, Dictionary, IProjectionFactoryExtender,
+    IProjectionStreamGenerator
+} from "prettygoat";
 import {interfaces} from "inversify";
 import {IWorkflowProcessorFactory, WorkflowProcessorFactory} from "./workflow/WorkflowProcessorFactory";
 import {ITickScheduler, default as TickScheduler} from "./ticks/TickScheduler";
 import {VirtualTimeExtender} from "./ticks/VirtualTimeExtender";
+import {TickStreamGenerator} from "./ticks/TickStreamGenerator";
 
 class WorkflowModule implements IModule {
 
@@ -12,6 +16,7 @@ class WorkflowModule implements IModule {
         container.bind<ITickScheduler>("ITickScheduler").to(TickScheduler);
         container.bind<interfaces.Factory<ITickScheduler>>("Factory<ITickScheduler>").toAutoFactory<ITickScheduler>("ITickScheduler");
         container.bind<IProjectionFactoryExtender>("IProjectionFactoryExtender").to(VirtualTimeExtender).inSingletonScope();
+        container.rebind<IProjectionStreamGenerator>("IProjectionStreamGenerator").to(TickStreamGenerator).inSingletonScope();
     };
 
     register(registry: IProjectionRegistry, serviceLocator?: IServiceLocator, overrides?: any) {
