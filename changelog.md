@@ -1,3 +1,7 @@
+# 0.3.3
+
+Bump inversify
+
 # 0.3.2
 
 Fix scheduling of ticks
