@@ -1,3 +1,7 @@
+# 0.3.2
+
+Fix scheduling of ticks
+
 # 0.3.1
 
 Fix IServiceLocator import inside declaration file
