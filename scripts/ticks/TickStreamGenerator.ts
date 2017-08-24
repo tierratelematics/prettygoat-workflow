@@ -1,11 +1,12 @@
 import {inject, injectable} from "inversify";
-import {Observable, VirtualTimeScheduler} from "rxjs";
+import {Observable} from "rxjs";
 import {
     IDateRetriever, IProjectionStreamGenerator, IStreamFactory, Dictionary, IProjection,
     Snapshot, SpecialEvents, Event
 } from "prettygoat";
 import Tick from "./Tick";
 import {ITickScheduler} from "./TickScheduler";
+import HistoricalScheduler from "./HistoricalScheduler";
 
 
 @injectable()
@@ -27,13 +28,12 @@ export class TickStreamGenerator implements IProjectionStreamGenerator {
 
     private combineStreams(events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever) {
         let realtime = false;
-        let scheduler = new VirtualTimeScheduler();
+        let scheduler = new HistoricalScheduler();
 
         return Observable.create(observer => {
             let subscription = events.subscribe(event => {
                 if (event.type === SpecialEvents.REALTIME) {
                     if (!realtime) {
-                        scheduler.maxFrames = Number.POSITIVE_INFINITY;
                         scheduler.flush();
                     }
                     realtime = true;
@@ -43,10 +43,9 @@ export class TickStreamGenerator implements IProjectionStreamGenerator {
                 } else {
                     scheduler.schedule(() => {
                         observer.next(event);
-                    }, +event.timestamp - scheduler.frame);
+                    }, +event.timestamp);
                     try {
-                        scheduler.maxFrames = +event.timestamp;
-                        scheduler.flush();
+                        scheduler.advanceTo(+event.timestamp);
                     } catch (error) {
                         observer.error(error);
                     }
@@ -59,7 +58,7 @@ export class TickStreamGenerator implements IProjectionStreamGenerator {
                 } else {
                     scheduler.schedule(() => {
                         observer.next(event);
-                    }, +event.payload.clock - scheduler.frame);
+                    }, +event.payload.clock);
                 }
             }));
 

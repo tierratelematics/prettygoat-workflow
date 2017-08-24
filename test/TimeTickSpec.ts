@@ -51,7 +51,7 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
             });
         });
 
-        context("and it's past the system lolex", () => {
+        context("and it's past the system clock", () => {
             it("should delay it in the future", (done) => {
                 dateRetriever.setDate(new Date(300));
                 tickScheduler.schedule(new Date(500));
