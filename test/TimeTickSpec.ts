@@ -38,16 +38,38 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
                 streamData.next({
                     type: "TickTrigger", payload: null, timestamp: new Date(60)
                 });
-                tickScheduler.schedule(new Date(100));
                 tickScheduler.schedule(new Date(300));
+                tickScheduler.schedule(new Date(100));
+                streamData.next({
+                    type: "OtherEvent", payload: null, timestamp: new Date(200)
+                });
+                streamData.next({
+                    type: "OtherEvent", payload: null, timestamp: new Date(400)
+                });
+
+                expect(notifications[0].type).to.eql("TickTrigger");
+                expect(notifications[1].type).to.eql("Tick");
+                expect(notifications[1].payload.clock).to.eql(new Date(100));
+                expect(notifications[2].type).to.eql("OtherEvent");
+                expect(notifications[3].type).to.eql("Tick");
+            });
+        });
+
+        context("when an another tick has been scheduled with the same delay", () => {
+            it("should process both", () => {
+                streamData.next({
+                    type: "TickTrigger", payload: null, timestamp: new Date(60)
+                });
+                tickScheduler.schedule(new Date(100));
+                tickScheduler.schedule(new Date(100));
                 streamData.next({
                     type: "OtherEvent", payload: null, timestamp: new Date(200)
                 });
 
                 expect(notifications[0].type).to.eql("TickTrigger");
                 expect(notifications[1].type).to.eql("Tick");
-                expect(notifications[1].payload.clock).to.eql(new Date(100));
-                expect(notifications).to.have.length(3);
+                expect(notifications[2].type).to.eql("Tick");
+                expect(notifications).to.have.length(4);
             });
         });
 

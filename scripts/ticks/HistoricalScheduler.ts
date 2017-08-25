@@ -1,17 +1,17 @@
-import { VirtualTimeScheduler } from "rxjs";
+import {VirtualTimeScheduler} from "rxjs";
 
 class HistoricalScheduler extends VirtualTimeScheduler {
 
     advanceTo(timestamp: number) {
-        do {
-            const action = this.actions.shift();
-            if (!action) {
+        while (true) {
+            let action = this.actions[0];
+            if (!action || (action && action.delay - this.frame > timestamp))
                 break;
-            }
 
+            action = this.actions.shift();
             action.execute(action.state, action.delay);
             this.frame = action.delay;
-        } while (this.frame < timestamp);
+        }
     }
 }
 
