@@ -4,6 +4,7 @@ import {IMock, Mock, Times, It} from "typemoq";
 import {IWorkflowProcessor, WorkflowProcessor} from "../scripts/workflow/WorkflowProcessor";
 import {SideEffectAction, SideEffectPolicies} from "../scripts/workflow/SideEffect";
 import {ITransactionLog} from "../scripts/workflow/TransactionLog";
+import {NullLogger} from "prettygoat";
 
 describe("Given a workflow processor", () => {
     let subject: IWorkflowProcessor;
@@ -13,7 +14,7 @@ describe("Given a workflow processor", () => {
     beforeEach(() => {
         action = Mock.ofType<SideEffectAction>();
         transactionLog = Mock.ofType<ITransactionLog>();
-        subject = new WorkflowProcessor("test", transactionLog.object);
+        subject = new WorkflowProcessor("test", transactionLog.object, NullLogger);
     });
 
     context("when a side effect needs to be processed", () => {

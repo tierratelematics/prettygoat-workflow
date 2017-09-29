@@ -1,16 +1,15 @@
 import {inject, injectable} from "inversify";
 import {Observable} from "rxjs";
 import {
-    IDateRetriever, IProjectionStreamGenerator, IStreamFactory, Dictionary, IProjection,
+    IDateRetriever, IStreamFactory, Dictionary, IProjection,
     Snapshot, SpecialEvents, Event
 } from "prettygoat";
 import Tick from "./Tick";
 import {ITickScheduler} from "./TickScheduler";
 import HistoricalScheduler from "./HistoricalScheduler";
 
-
 @injectable()
-export class TickStreamGenerator implements IProjectionStreamGenerator {
+export class TickStreamFactory implements IStreamFactory {
 
     constructor(@inject("IStreamFactory") private streamFactory: IStreamFactory,
                 @inject("ITickSchedulerHolder") private tickSchedulerHolder: Dictionary<ITickScheduler>,
@@ -20,8 +19,8 @@ export class TickStreamGenerator implements IProjectionStreamGenerator {
 
     generate(projection: IProjection<any>, snapshot: Snapshot<any>, completions: Observable<any>): Observable<Event> {
         return this.combineStreams(
-            this.streamFactory.from(snapshot ? snapshot.lastEvent : null, completions, projection.definition),
-            this.tickSchedulerHolder[projection.name].from(null),
+            this.streamFactory.generate(projection, snapshot, completions),
+            this.tickSchedulerHolder[projection.name].generate(projection),
             this.dateRetriever
         );
     }
