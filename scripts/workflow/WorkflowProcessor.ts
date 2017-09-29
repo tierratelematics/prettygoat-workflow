@@ -1,5 +1,5 @@
 import {SideEffectAction, SideEffectPolicies} from "./SideEffect";
-import {ILogger} from "prettygoat";
+import {NullLogger, ILogger} from "prettygoat";
 import {ITransactionLog} from "./TransactionLog";
 
 export interface IWorkflowProcessor {
@@ -8,7 +8,7 @@ export interface IWorkflowProcessor {
 
 export class WorkflowProcessor implements IWorkflowProcessor {
 
-    constructor(private workflowId: string, private transactionLog: ITransactionLog, private logger: ILogger) {
+    constructor(private workflowId: string, private transactionLog: ITransactionLog, private logger: ILogger = NullLogger) {
 
     }
 
