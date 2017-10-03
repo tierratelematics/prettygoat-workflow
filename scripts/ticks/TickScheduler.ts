@@ -1,7 +1,7 @@
 import {injectable, inject} from "inversify";
 import {Subject, Observable} from "rxjs";
 import Tick from "./Tick";
-import {IDateRetriever, Event, IStreamFactory, IProjection} from "prettygoat";
+import {IDateRetriever, Event, IStreamFactory} from "prettygoat";
 import * as moment from "moment";
 
 export interface ITickScheduler extends IStreamFactory {
@@ -26,7 +26,7 @@ class TickScheduler implements ITickScheduler {
         });
     }
 
-    generate(projection: IProjection): Observable<Event> {
+    from(): Observable<Event> {
         return this.subject;
     }
 

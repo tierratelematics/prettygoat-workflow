@@ -3,14 +3,12 @@ import expect = require("expect.js");
 import {Mock, IMock, It} from "typemoq";
 import {Subject} from "rxjs";
 import TickScheduler, {ITickScheduler} from "../scripts/ticks/TickScheduler";
-import {IProjection, IStreamFactory, Event, SpecialEvents} from "prettygoat";
+import {IStreamFactory, Event, SpecialEvents} from "prettygoat";
 import MockDateRetriever from "./fixtures/MockDateRetriever";
-import MockProjectionDefinition from "./fixtures/MockProjectionDefinition";
 import {TickStreamFactory} from "../scripts/ticks/TickStreamFactory";
 
 describe("TimeTick, given a tick scheduler and a projection", () => {
 
-    let projection: IProjection<any>;
     let tickScheduler: ITickScheduler;
     let streamData: Subject<Event>;
     let notifications: Event[];
@@ -22,14 +20,13 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
         notifications = [];
         dateRetriever = new MockDateRetriever(new Date(3000));
         tickScheduler = new TickScheduler(new MockDateRetriever(new Date(0)));
-        projection = new MockProjectionDefinition().define();
         streamData = new Subject<Event>();
         stream = Mock.ofType<IStreamFactory>();
-        stream.setup(s => s.generate(It.isAny(), It.isAny(), It.isAny())).returns(() => streamData);
+        stream.setup(s => s.from(It.isAny(), It.isAny(), It.isAny())).returns(() => streamData);
         subject = new TickStreamFactory(stream.object, {
             "Mock": tickScheduler
         }, dateRetriever);
-        subject.generate(projection, null, null).subscribe(event => notifications.push(event));
+        subject.from({name: "Mock", manifests: []}, null, null).subscribe(event => notifications.push(event));
     });
 
     context("when a new tick is scheduled", () => {
