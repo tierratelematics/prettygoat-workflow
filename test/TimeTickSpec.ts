@@ -29,8 +29,27 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
         subject.from({name: "Mock", manifests: []}, null, null).subscribe(event => notifications.push(event));
     });
 
+    context("when an event is read out of order", () => {
+        it("should be processed instantly", () => {
+            streamData.next({
+                type: "TickTrigger", payload: null, timestamp: new Date(60)
+            });
+            streamData.next({
+                type: "Unordered", payload: null, timestamp: new Date(50)
+            });
+            streamData.next({
+                type: "TickTrigger", payload: null, timestamp: new Date(70)
+            });
+
+            expect(notifications[0].type).to.eql("TickTrigger");
+            expect(notifications[1].type).to.eql("Unordered");
+            expect(notifications[2].type).to.eql("TickTrigger");
+            expect(notifications[2].timestamp).to.eql(new Date(70));
+        });
+    });
+
     context("when a new tick is scheduled", () => {
-        context("and the projection is still fetching historical events", () => {
+        context("when the projection is still fetching historical events", () => {
             it("should schedule the tick after the other events", () => {
                 streamData.next({
                     type: "TickTrigger", payload: null, timestamp: new Date(60)
@@ -70,7 +89,7 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
             });
         });
 
-        context("and it's past the system clock", () => {
+        context("when it's past the system clock", () => {
             it("should delay it in the future", (done) => {
                 dateRetriever.setDate(new Date(300));
                 tickScheduler.schedule(new Date(500));
@@ -115,7 +134,7 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
             });
         });
 
-        context("and the projection is fetching real time events", () => {
+        context("when the projection is fetching real time events", () => {
             it("should schedule the tick in the future", (done) => {
                 streamData.next({
                     type: SpecialEvents.REALTIME, payload: null, timestamp: new Date(110)
