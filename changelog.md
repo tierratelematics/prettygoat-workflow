@@ -1,3 +1,7 @@
+# 1.0.0
+
+Support for prettygoat 5
+
 # 0.3.4
 
 Move types into dev deps
