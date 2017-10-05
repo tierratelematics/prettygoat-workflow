@@ -20,8 +20,8 @@
     "typemoq": "~1.2.1"
   },
   "peerDependencies": {
-    "prettygoat": "^4.0.0-2"
+    "prettygoat": "^5.0.0"
   },
-  "main": "dist/prettygoat-workflow.js",
-  "typings": "declarations/prettygoat-workflow.d.ts"
+  "main": "dist",
+  "typings": "dist"
 }

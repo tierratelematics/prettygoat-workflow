@@ -3,37 +3,53 @@ import expect = require("expect.js");
 import {Mock, IMock, It} from "typemoq";
 import {Subject} from "rxjs";
 import TickScheduler, {ITickScheduler} from "../scripts/ticks/TickScheduler";
-import {IProjection, IProjectionStreamGenerator, IStreamFactory, Event, SpecialEvents} from "prettygoat";
+import {IStreamFactory, Event, SpecialEvents} from "prettygoat";
 import MockDateRetriever from "./fixtures/MockDateRetriever";
-import MockProjectionDefinition from "./fixtures/MockProjectionDefinition";
-import {TickStreamGenerator} from "../scripts/ticks/TickStreamGenerator";
+import {TickStreamFactory} from "../scripts/ticks/TickStreamFactory";
 
 describe("TimeTick, given a tick scheduler and a projection", () => {
 
-    let projection: IProjection<any>;
     let tickScheduler: ITickScheduler;
     let streamData: Subject<Event>;
     let notifications: Event[];
     let dateRetriever: MockDateRetriever;
     let stream: IMock<IStreamFactory>;
-    let subject: IProjectionStreamGenerator;
+    let subject: IStreamFactory;
 
     beforeEach(() => {
         notifications = [];
         dateRetriever = new MockDateRetriever(new Date(3000));
         tickScheduler = new TickScheduler(new MockDateRetriever(new Date(0)));
-        projection = new MockProjectionDefinition().define();
         streamData = new Subject<Event>();
         stream = Mock.ofType<IStreamFactory>();
         stream.setup(s => s.from(It.isAny(), It.isAny(), It.isAny())).returns(() => streamData);
-        subject = new TickStreamGenerator(stream.object, {
+        subject = new TickStreamFactory(stream.object, {
             "Mock": tickScheduler
         }, dateRetriever);
-        subject.generate(projection, null, null).subscribe(event => notifications.push(event));
+        subject.from({name: "Mock", manifests: []}, null, null).subscribe(event => notifications.push(event));
+    });
+
+    context("when an event is read out of order", () => {
+        it("should be processed instantly", () => {
+            streamData.next({
+                type: "TickTrigger", payload: null, timestamp: new Date(60)
+            });
+            streamData.next({
+                type: "Unordered", payload: null, timestamp: new Date(50)
+            });
+            streamData.next({
+                type: "TickTrigger", payload: null, timestamp: new Date(70)
+            });
+
+            expect(notifications[0].type).to.eql("TickTrigger");
+            expect(notifications[1].type).to.eql("Unordered");
+            expect(notifications[2].type).to.eql("TickTrigger");
+            expect(notifications[2].timestamp).to.eql(new Date(70));
+        });
     });
 
     context("when a new tick is scheduled", () => {
-        context("and the projection is still fetching historical events", () => {
+        context("when the projection is still fetching historical events", () => {
             it("should schedule the tick after the other events", () => {
                 streamData.next({
                     type: "TickTrigger", payload: null, timestamp: new Date(60)
@@ -73,7 +89,7 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
             });
         });
 
-        context("and it's past the system clock", () => {
+        context("when it's past the system clock", () => {
             it("should delay it in the future", (done) => {
                 dateRetriever.setDate(new Date(300));
                 tickScheduler.schedule(new Date(500));
@@ -118,7 +134,7 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
             });
         });
 
-        context("and the projection is fetching real time events", () => {
+        context("when the projection is fetching real time events", () => {
             it("should schedule the tick in the future", (done) => {
                 streamData.next({
                     type: SpecialEvents.REALTIME, payload: null, timestamp: new Date(110)

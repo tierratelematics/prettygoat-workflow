@@ -26,7 +26,7 @@ class TickScheduler implements ITickScheduler {
         });
     }
 
-    from(lastEvent: Date): Observable<Event> {
+    from(): Observable<Event> {
         return this.subject;
     }
 
