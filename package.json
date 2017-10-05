@@ -1,6 +1,6 @@
 {
   "name": "prettygoat-workflow",
-  "version": "0.3.4",
+  "version": "1.0.0",
   "dependencies": {
     "inversify": "~4.1.1",
     "ioredis": "~3.1.2",
@@ -20,8 +20,8 @@
     "typemoq": "~1.2.1"
   },
   "peerDependencies": {
-    "prettygoat": "^4.0.0-2"
+    "prettygoat": "^5.0.0"
   },
-  "main": "dist/prettygoat-workflow.js",
-  "typings": "declarations/prettygoat-workflow.d.ts"
+  "main": "dist",
+  "typings": "dist"
 }
