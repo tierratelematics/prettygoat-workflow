@@ -14,11 +14,16 @@ export class WorkflowProcessor implements IWorkflowProcessor {
 
     async process(action: SideEffectAction, timestamp: Date, policy = SideEffectPolicies.ABORT): Promise<void> {
         let lastTransaction = await this.transactionLog.read();
-        if (lastTransaction >= timestamp || !action) return;
+        this.logger.debug(`Last transaction: ${lastTransaction}, current event: ${timestamp}`);
+        if (lastTransaction >= timestamp || !action) {
+            this.logger.debug("Skipping action since it has been already processed");
+            return;
+        }
 
         try {
             await action();
             await this.transactionLog.commit(timestamp);
+            this.logger.debug(`Updated transaction log to ${timestamp}`);
         } catch (error) {
             this.logger.error(`Side effect for workflow ${this.workflowId} has failed at timestamp ${timestamp}`);
             this.logger.error(error);
