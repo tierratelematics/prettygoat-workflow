@@ -11,11 +11,11 @@ export interface IWorkflowProcessorFactory {
 export class WorkflowProcessorFactory implements IWorkflowProcessorFactory {
 
     constructor(@inject("RedisClient") private redisClient, @inject("ILogger") private logger: ILogger) {
-
+        this.logger = this.logger.createChildLogger("WorkflowProcessor");
     }
 
     processorFor(id: string): IWorkflowProcessor {
-        return new WorkflowProcessor(id, new TransactionLog(id, this.redisClient), this.logger);
+        return new WorkflowProcessor(id, new TransactionLog(id, this.redisClient), this.logger.createChildLogger(id));
     }
 
 }
