@@ -29,12 +29,11 @@ export class TickStreamFactory implements IStreamFactory {
     }
 
     from(query: ProjectionQuery, idempotence: IIdempotenceFilter, backpressureGate: Observable<string>): Observable<Event> {
-        let logger = this.logger.createChildLogger(query.name);
         return this.combineStreams(
             this.streamFactory.from(query, idempotence, backpressureGate),
             this.tickSchedulerHolder[query.name].from(),
             this.dateRetriever,
-            this.logger
+            this.logger.createChildLogger(query.name)
         );
     }
 
