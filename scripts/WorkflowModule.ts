@@ -7,6 +7,7 @@ import {IWorkflowProcessorFactory, WorkflowProcessorFactory} from "./workflow/Wo
 import {ITickScheduler, default as TickScheduler} from "./ticks/TickScheduler";
 import {VirtualTimeExtender} from "./ticks/VirtualTimeExtender";
 import {TickStreamFactory} from "./ticks/TickStreamFactory";
+import Tick from "./ticks/Tick";
 
 class WorkflowModule implements IModule {
 
@@ -17,6 +18,7 @@ class WorkflowModule implements IModule {
         container.bind<interfaces.Factory<ITickScheduler>>("Factory<ITickScheduler>").toAutoFactory<ITickScheduler>("ITickScheduler");
         container.bind<IProjectionFactoryExtender>("IProjectionFactoryExtender").to(VirtualTimeExtender).inSingletonScope();
         container.rebind<IStreamFactory>("IProjectionStreamFactory").to(TickStreamFactory).inSingletonScope();
+        container.bind<Dictionary<Tick[]>>("RealtimeTicksHolder").toConstantValue({});
     };
 
     register(registry: IProjectionRegistry, serviceLocator?: IServiceLocator, overrides?: any) {

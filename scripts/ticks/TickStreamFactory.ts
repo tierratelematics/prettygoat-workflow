@@ -24,20 +24,23 @@ export class TickStreamFactory implements IStreamFactory {
 
     constructor(@inject("IStreamFactory") private streamFactory: IStreamFactory,
                 @inject("ITickSchedulerHolder") private tickSchedulerHolder: Dictionary<ITickScheduler>,
-                @inject("IDateRetriever") private dateRetriever: IDateRetriever) {
+                @inject("IDateRetriever") private dateRetriever: IDateRetriever,
+                @inject("RealtimeTicksHolder") private ticksHolder: Dictionary<Tick[]>) {
 
     }
 
     from(query: ProjectionQuery, idempotence: IIdempotenceFilter, backpressureGate: Observable<string>): Observable<Event> {
+        this.ticksHolder[query.name] = this.ticksHolder[query.name] || [];
         return this.combineStreams(
             this.streamFactory.from(query, idempotence, backpressureGate),
             this.tickSchedulerHolder[query.name].from(),
             this.dateRetriever,
-            this.logger.createChildLogger(query.name)
+            this.logger.createChildLogger(query.name),
+            this.ticksHolder[query.name]
         );
     }
 
-    private combineStreams(events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger) {
+    private combineStreams(events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger, realtimeTicks: Tick[]) {
         let realtime = false;
         let scheduler = new HistoricalScheduler();
 
@@ -67,6 +70,7 @@ export class TickStreamFactory implements IStreamFactory {
                 if (realtime || event.payload.clock > dateRetriever.getDate()) {
                     logger.debug(`Scheduling realtime tick to ${event.payload.clock}`);
                     Observable.empty().delay(event.timestamp).subscribe(null, null, () => observer.next(event));
+                    realtimeTicks.push(event.payload);
                 } else {
                     logger.debug(`Scheduling tick to ${event.payload.clock}`);
                     scheduler.schedule(() => {
