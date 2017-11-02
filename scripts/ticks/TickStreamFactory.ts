@@ -10,11 +10,13 @@ import {
     Event,
     ILogger,
     NullLogger,
-    LoggingContext
+    LoggingContext,
+    Snapshot
 } from "prettygoat";
 import Tick from "./Tick";
 import {ITickScheduler} from "./TickScheduler";
 import HistoricalScheduler from "./HistoricalScheduler";
+import {remove, forEach} from "lodash";
 
 @injectable()
 @LoggingContext("TickStreamFactory")
@@ -25,24 +27,31 @@ export class TickStreamFactory implements IStreamFactory {
     constructor(@inject("IStreamFactory") private streamFactory: IStreamFactory,
                 @inject("ITickSchedulerHolder") private tickSchedulerHolder: Dictionary<ITickScheduler>,
                 @inject("IDateRetriever") private dateRetriever: IDateRetriever,
-                @inject("RealtimeTicksHolder") private ticksHolder: Dictionary<Tick[]>) {
+                @inject("RealtimeTicksHolder") private ticksHolder: Dictionary<Tick[]>,
+                @inject("SnapshotsHolder") private snapshotsHolder: Dictionary<Snapshot>) {
 
     }
 
     from(query: ProjectionQuery, idempotence: IIdempotenceFilter, backpressureGate: Observable<string>): Observable<Event> {
         this.ticksHolder[query.name] = this.ticksHolder[query.name] || [];
+        let tickScheduler = this.tickSchedulerHolder[query.name];
+        let snapshottedTicks = this.snapshotsHolder[query.name] ? this.snapshotsHolder[query.name].memento.ticks: null;
+        if (snapshottedTicks && snapshottedTicks.length) {
+            forEach(snapshottedTicks, tick => tickScheduler.schedule(new Date(tick.clock), tick.state));
+        }
         return this.combineStreams(
+            query,
             this.streamFactory.from(query, idempotence, backpressureGate),
-            this.tickSchedulerHolder[query.name].from(),
+            tickScheduler.from(),
             this.dateRetriever,
-            this.logger.createChildLogger(query.name),
-            this.ticksHolder[query.name]
+            this.logger.createChildLogger(query.name)
         );
     }
 
-    private combineStreams(events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger, realtimeTicks: Tick[]) {
+    private combineStreams(query: ProjectionQuery, events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger) {
         let realtime = false;
         let scheduler = new HistoricalScheduler();
+        let realtimeTicks = this.ticksHolder[query.name];
 
         return Observable.create(observer => {
             let subscription = events.subscribe(event => {

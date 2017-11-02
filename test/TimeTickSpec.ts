@@ -28,7 +28,7 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
         stream.setup(s => s.from(It.isAny(), It.isAny(), It.isAny())).returns(() => streamData);
         subject = new TickStreamFactory(stream.object, {
             "Mock": tickScheduler
-        }, dateRetriever, ticksHolder);
+        }, dateRetriever, ticksHolder, {});
         subject.from({name: "Mock", manifests: []}, null, null).subscribe(event => notifications.push(event));
     });
 
