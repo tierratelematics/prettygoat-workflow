@@ -3,8 +3,7 @@ import expect = require("expect.js");
 import {Mock, IMock, It} from "typemoq";
 import {Subject} from "rxjs";
 import TickScheduler, {ITickScheduler} from "../scripts/ticks/TickScheduler";
-import {IStreamFactory, Event, SpecialEvents, Dictionary} from "prettygoat";
-import MockDateRetriever from "./fixtures/MockDateRetriever";
+import {IStreamFactory, Event, SpecialEvents, Dictionary, IDateRetriever} from "prettygoat";
 import {TickStreamFactory} from "../scripts/ticks/TickStreamFactory";
 import Tick from "../scripts/ticks/Tick";
 
@@ -13,7 +12,7 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
     let tickScheduler: ITickScheduler;
     let streamData: Subject<Event>;
     let notifications: Event[];
-    let dateRetriever: MockDateRetriever;
+    let dateRetriever: IMock<IDateRetriever>;
     let stream: IMock<IStreamFactory>;
     let subject: IStreamFactory;
     let ticksHolder: Dictionary<Tick[]>;
@@ -21,14 +20,15 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
     beforeEach(() => {
         notifications = [];
         ticksHolder = {};
-        dateRetriever = new MockDateRetriever(new Date(3000));
-        tickScheduler = new TickScheduler(new MockDateRetriever(new Date(0)));
+        dateRetriever = Mock.ofType<IDateRetriever>();
+        dateRetriever.setup(d => d.getDate()).returns(() => new Date(3000));
+        tickScheduler = new TickScheduler(dateRetriever.object);
         streamData = new Subject<Event>();
         stream = Mock.ofType<IStreamFactory>();
         stream.setup(s => s.from(It.isAny(), It.isAny(), It.isAny())).returns(() => streamData);
         subject = new TickStreamFactory(stream.object, {
             "Mock": tickScheduler
-        }, dateRetriever, ticksHolder, {});
+        }, dateRetriever.object, ticksHolder, {});
         subject.from({name: "Mock", manifests: []}, null, null).subscribe(event => notifications.push(event));
     });
 
@@ -94,7 +94,8 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
 
         context("when it's past the system clock", () => {
             it("should delay it in the future", (done) => {
-                dateRetriever.setDate(new Date(300));
+                dateRetriever.reset();
+                dateRetriever.setup(d => d.getDate()).returns(() => new Date(300));
                 tickScheduler.schedule(new Date(500));
 
                 expect(notifications[0]).not.to.be.ok();
@@ -139,6 +140,8 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
 
         context("when the projection is fetching real time events", () => {
             beforeEach(() => {
+                dateRetriever.reset();
+                dateRetriever.setup(d => d.getDate()).returns(() => new Date(100));
                 streamData.next({
                     type: SpecialEvents.REALTIME, payload: null, timestamp: new Date(110)
                 });
@@ -154,8 +157,9 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
             });
 
             it("should cache those ticks for snapshots", (done) => {
+                expect(ticksHolder["Mock"]).to.have.length(1);
                 setTimeout(() => {
-                    expect(ticksHolder["Mock"]).to.have.length(1);
+                    expect(ticksHolder["Mock"]).to.have.length(0);
                     done();
                 }, 200);
             });
