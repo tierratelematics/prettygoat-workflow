@@ -1,4 +1,4 @@
-import { IVirtualTime } from "./ticks/VirtualTimeExtender";
+export { IVirtualTime } from "./ticks/VirtualTimeExtender";
 export {SideEffectAction, SideEffectPolicies} from "./workflow/SideEffect";
 export {IWorkflow, IWorkflowDefinition} from "./workflow/Workflow";
 export {IWorkflowProcessorFactory} from "./workflow/WorkflowProcessorFactory";
