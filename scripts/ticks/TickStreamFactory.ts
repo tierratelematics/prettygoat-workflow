@@ -1,5 +1,5 @@
 import {inject, injectable} from "inversify";
-import {Observable} from "rxjs";
+import {Observable, Subscription} from "rxjs";
 import {
     IDateRetriever,
     IStreamFactory,
@@ -33,9 +33,10 @@ export class TickStreamFactory implements IStreamFactory {
     }
 
     from(query: ProjectionQuery, idempotence: IIdempotenceFilter, backpressureGate: Observable<string>): Observable<Event> {
+        // TODO: think a new way to restore the ticks not in this place
         this.ticksHolder[query.name] = this.ticksHolder[query.name] || [];
         let tickScheduler = this.tickSchedulerHolder[query.name];
-        let snapshottedTicks = this.snapshotsHolder[query.name] ? this.snapshotsHolder[query.name].memento.ticks: null;
+        let snapshottedTicks = this.snapshotsHolder[query.name] ? this.snapshotsHolder[query.name].memento.ticks : null;
         if (snapshottedTicks && snapshottedTicks.length) {
             forEach(snapshottedTicks, tick => tickScheduler.schedule(new Date(tick.clock), tick.state));
         }
@@ -49,44 +50,34 @@ export class TickStreamFactory implements IStreamFactory {
     }
 
     private combineStreams(query: ProjectionQuery, events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger) {
-        let realtime = false;
-        let scheduler = new HistoricalScheduler();
-        let realtimeTicks = this.ticksHolder[query.name];
-
         return Observable.create(observer => {
-            let subscription = events.subscribe(event => {
-                if (event.type === SpecialEvents.REALTIME) {
-                    if (!realtime) {
-                        scheduler.flush();
-                    }
-                    realtime = true;
-                }
-                if (realtime) {
-                    observer.next(event);
-                } else {
-                    scheduler.schedule(() => {
-                        observer.next(event);
-                    }, +event.timestamp);
-                    try {
-                        scheduler.advanceTo(+event.timestamp);
-                    } catch (error) {
-                        observer.error(error);
-                    }
-                }
-            }, error => observer.error(error), () => observer.complete());
+            let scheduler = new HistoricalScheduler();
+            let realtimeTicks = this.ticksHolder[query.name];
+            let subscription = new Subscription();
 
-            subscription.add(ticks.subscribe((event: Event<Tick>) => {
-                if (realtime || event.payload.clock > dateRetriever.getDate()) {
-                    logger.debug(`Scheduling realtime tick to ${event.payload.clock}`);
-                    Observable.empty().delay(event.timestamp).subscribe(null, null, () => observer.next(event));
+            ticks.subscribe((event: Event<Tick>) => {
+                logger.debug(`Scheduling tick to ${event.payload.clock.toISOString()}`);
+                scheduler.schedule(() => {
+                    observer.next(event);
+                    remove(this.ticksHolder[query.name], tick => tick === event.payload);
+                }, +event.payload.clock);
+                if (event.payload.clock > dateRetriever.getDate()) {
                     realtimeTicks.push(event.payload);
-                } else {
-                    logger.debug(`Scheduling tick to ${event.payload.clock}`);
-                    scheduler.schedule(() => {
-                        observer.next(event);
-                    }, +event.payload.clock);
                 }
-            }));
+            });
+
+            subscription.add(events.subscribe(event => {
+                if (event.type === SpecialEvents.REALTIME)
+                   subscription.add(Observable.interval(1000).subscribe(() => scheduler.advanceTo(+this.dateRetriever.getDate())));
+                scheduler.schedule(() => {
+                    observer.next(event);
+                }, +event.timestamp);
+                try {
+                    scheduler.advanceTo(+event.timestamp);
+                } catch (error) {
+                    observer.error(error);
+                }
+            }, error => observer.error(error), () => observer.complete()));
 
             return subscription;
         });
