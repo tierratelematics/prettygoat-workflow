@@ -57,10 +57,10 @@ export class TickStreamFactory implements IStreamFactory {
 
             ticks.subscribe((event: Event<Tick>) => {
                 logger.debug(`Scheduling tick to ${event.payload.clock.toISOString()}`);
-                scheduler.schedule(() => {
+                subscription.add(scheduler.schedule(() => {
                     observer.next(event);
                     remove(this.ticksHolder[query.name], tick => tick === event.payload);
-                }, +event.payload.clock);
+                }, +event.payload.clock));
                 if (event.payload.clock > dateRetriever.getDate()) {
                     realtimeTicks.push(event.payload);
                 }
