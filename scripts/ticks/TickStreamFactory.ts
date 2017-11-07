@@ -33,8 +33,7 @@ export class TickStreamFactory implements IStreamFactory {
     }
 
     from(query: ProjectionQuery, idempotence: IIdempotenceFilter, backpressureGate: Observable<string>): Observable<Event> {
-        // TODO: think a new way to restore the ticks not in this place
-        this.restoreTicks(query.name);
+        this.ticksHolder[query.name] = this.ticksHolder[query.name] || [];
         return this.combineStreams(
             query,
             this.streamFactory.from(query, idempotence, backpressureGate),
@@ -44,12 +43,14 @@ export class TickStreamFactory implements IStreamFactory {
         );
     }
 
-    private restoreTicks(projection: string) {
-        this.ticksHolder[projection] = this.ticksHolder[projection] || [];
+    private restoreTicks(projection: string, logger: ILogger) {
         let tickScheduler = this.tickSchedulerHolder[projection];
         let snapshottedTicks = this.snapshotsHolder[projection] ? this.snapshotsHolder[projection].memento.ticks : null;
         if (snapshottedTicks && snapshottedTicks.length) {
-            forEach(snapshottedTicks, tick => tickScheduler.schedule(new Date(tick.clock), tick.state));
+            forEach(snapshottedTicks, tick => {
+                tickScheduler.schedule(new Date(tick.clock), tick.state);
+                logger.debug(`Restoring tick for date ${tick.clock}`);
+            });
         }
     }
 
@@ -80,6 +81,9 @@ export class TickStreamFactory implements IStreamFactory {
                     observer.error(error);
                 }
             }, error => observer.error(error), () => observer.complete()));
+
+            // TODO: think a new way to restore the ticks not in this place
+            this.restoreTicks(query.name, logger);
 
             return subscription;
         });
