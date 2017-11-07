@@ -6,7 +6,7 @@ import Tick from "./Tick";
 export class TickSnapshotProducer implements ISnapshotProducer {
 
     constructor(@inject("IdempotenceFilterHolder") private filterHolder: Dictionary<IIdempotenceFilter>,
-                @inject("RealtimeTicksHolder") private ticksHolder: Dictionary<Tick[]>) {
+                @inject("SnapshotTicksHolder") private ticksHolder: Dictionary<Tick[]>) {
 
     }
 

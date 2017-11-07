@@ -20,7 +20,7 @@ class WorkflowModule implements IModule {
         container.bind<IProjectionFactoryExtender>("IProjectionFactoryExtender").to(VirtualTimeExtender).inSingletonScope();
         container.rebind<IStreamFactory>("IProjectionStreamFactory").to(TickStreamFactory).inSingletonScope();
         container.rebind<ISnapshotProducer>("ISnapshotProducer").to(TickSnapshotProducer).inSingletonScope();
-        container.bind<Dictionary<Tick[]>>("RealtimeTicksHolder").toConstantValue({});
+        container.bind<Dictionary<Tick[]>>("SnapshotTicksHolder").toConstantValue({});
     };
 
     register(registry: IProjectionRegistry, serviceLocator?: IServiceLocator, overrides?: any) {

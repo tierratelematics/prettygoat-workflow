@@ -27,32 +27,36 @@ export class TickStreamFactory implements IStreamFactory {
     constructor(@inject("IStreamFactory") private streamFactory: IStreamFactory,
                 @inject("ITickSchedulerHolder") private tickSchedulerHolder: Dictionary<ITickScheduler>,
                 @inject("IDateRetriever") private dateRetriever: IDateRetriever,
-                @inject("RealtimeTicksHolder") private ticksHolder: Dictionary<Tick[]>,
+                @inject("SnapshotTicksHolder") private ticksHolder: Dictionary<Tick[]>,
                 @inject("SnapshotsHolder") private snapshotsHolder: Dictionary<Snapshot>) {
 
     }
 
     from(query: ProjectionQuery, idempotence: IIdempotenceFilter, backpressureGate: Observable<string>): Observable<Event> {
         // TODO: think a new way to restore the ticks not in this place
-        this.ticksHolder[query.name] = this.ticksHolder[query.name] || [];
-        let tickScheduler = this.tickSchedulerHolder[query.name];
-        let snapshottedTicks = this.snapshotsHolder[query.name] ? this.snapshotsHolder[query.name].memento.ticks : null;
-        if (snapshottedTicks && snapshottedTicks.length) {
-            forEach(snapshottedTicks, tick => tickScheduler.schedule(new Date(tick.clock), tick.state));
-        }
+        this.restoreTicks(query.name);
         return this.combineStreams(
             query,
             this.streamFactory.from(query, idempotence, backpressureGate),
-            tickScheduler.from(),
+            this.tickSchedulerHolder[query.name].from(),
             this.dateRetriever,
             this.logger.createChildLogger(query.name)
         );
     }
 
+    private restoreTicks(projection: string) {
+        this.ticksHolder[projection] = this.ticksHolder[projection] || [];
+        let tickScheduler = this.tickSchedulerHolder[projection];
+        let snapshottedTicks = this.snapshotsHolder[projection] ? this.snapshotsHolder[projection].memento.ticks : null;
+        if (snapshottedTicks && snapshottedTicks.length) {
+            forEach(snapshottedTicks, tick => tickScheduler.schedule(new Date(tick.clock), tick.state));
+        }
+    }
+
     private combineStreams(query: ProjectionQuery, events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger) {
         return Observable.create(observer => {
             let scheduler = new HistoricalScheduler();
-            let realtimeTicks = this.ticksHolder[query.name];
+            let snapshotTicks = this.ticksHolder[query.name];
             let subscription = new Subscription();
 
             ticks.subscribe((event: Event<Tick>) => {
@@ -61,9 +65,7 @@ export class TickStreamFactory implements IStreamFactory {
                     observer.next(event);
                     remove(this.ticksHolder[query.name], tick => tick === event.payload);
                 }, +event.payload.clock));
-                if (event.payload.clock > dateRetriever.getDate()) {
-                    realtimeTicks.push(event.payload);
-                }
+                snapshotTicks.push(event.payload);
             });
 
             subscription.add(events.subscribe(event => {
