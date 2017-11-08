@@ -1,5 +1,5 @@
 import {inject, injectable} from "inversify";
-import {Observable} from "rxjs";
+import {Observable, Subscription} from "rxjs";
 import {
     IDateRetriever,
     IStreamFactory,
@@ -10,11 +10,13 @@ import {
     Event,
     ILogger,
     NullLogger,
-    LoggingContext
+    LoggingContext,
+    Snapshot
 } from "prettygoat";
 import Tick from "./Tick";
 import {ITickScheduler} from "./TickScheduler";
 import HistoricalScheduler from "./HistoricalScheduler";
+import {remove, forEach} from "lodash";
 
 @injectable()
 @LoggingContext("TickStreamFactory")
@@ -24,12 +26,16 @@ export class TickStreamFactory implements IStreamFactory {
 
     constructor(@inject("IStreamFactory") private streamFactory: IStreamFactory,
                 @inject("ITickSchedulerHolder") private tickSchedulerHolder: Dictionary<ITickScheduler>,
-                @inject("IDateRetriever") private dateRetriever: IDateRetriever) {
+                @inject("IDateRetriever") private dateRetriever: IDateRetriever,
+                @inject("SnapshotTicksHolder") private ticksHolder: Dictionary<Tick[]>,
+                @inject("SnapshotsHolder") private snapshotsHolder: Dictionary<Snapshot>) {
 
     }
 
     from(query: ProjectionQuery, idempotence: IIdempotenceFilter, backpressureGate: Observable<string>): Observable<Event> {
+        this.ticksHolder[query.name] = this.ticksHolder[query.name] || [];
         return this.combineStreams(
+            query,
             this.streamFactory.from(query, idempotence, backpressureGate),
             this.tickSchedulerHolder[query.name].from(),
             this.dateRetriever,
@@ -37,43 +43,47 @@ export class TickStreamFactory implements IStreamFactory {
         );
     }
 
-    private combineStreams(events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger) {
-        let realtime = false;
-        let scheduler = new HistoricalScheduler();
+    private restoreTicks(projection: string, logger: ILogger) {
+        let tickScheduler = this.tickSchedulerHolder[projection];
+        let snapshottedTicks = this.snapshotsHolder[projection] ? this.snapshotsHolder[projection].memento.ticks : null;
+        if (snapshottedTicks && snapshottedTicks.length) {
+            forEach(snapshottedTicks, tick => {
+                tickScheduler.schedule(new Date(tick.clock), tick.state);
+                logger.debug(`Restoring tick for date ${tick.clock}`);
+            });
+        }
+    }
 
+    private combineStreams(query: ProjectionQuery, events: Observable<Event>, ticks: Observable<Event>, dateRetriever: IDateRetriever, logger: ILogger) {
         return Observable.create(observer => {
-            let subscription = events.subscribe(event => {
-                if (event.type === SpecialEvents.REALTIME) {
-                    if (!realtime) {
-                        scheduler.flush();
-                    }
-                    realtime = true;
-                }
-                if (realtime) {
-                    observer.next(event);
-                } else {
-                    scheduler.schedule(() => {
-                        observer.next(event);
-                    }, +event.timestamp);
-                    try {
-                        scheduler.advanceTo(+event.timestamp);
-                    } catch (error) {
-                        observer.error(error);
-                    }
-                }
-            }, error => observer.error(error), () => observer.complete());
+            let scheduler = new HistoricalScheduler();
+            let snapshotTicks = this.ticksHolder[query.name];
+            let subscription = new Subscription();
 
-            subscription.add(ticks.subscribe((event: Event<Tick>) => {
-                if (realtime || event.payload.clock > dateRetriever.getDate()) {
-                    logger.debug(`Scheduling realtime tick to ${event.payload.clock}`);
-                    Observable.empty().delay(event.timestamp).subscribe(null, null, () => observer.next(event));
-                } else {
-                    logger.debug(`Scheduling tick to ${event.payload.clock}`);
-                    scheduler.schedule(() => {
-                        observer.next(event);
-                    }, +event.payload.clock);
+            ticks.subscribe((event: Event<Tick>) => {
+                logger.debug(`Scheduling tick to ${event.payload.clock.toISOString()}`);
+                subscription.add(scheduler.schedule(() => {
+                    observer.next(event);
+                    remove(this.ticksHolder[query.name], tick => tick === event.payload);
+                }, +event.payload.clock));
+                snapshotTicks.push(event.payload);
+            });
+
+            subscription.add(events.subscribe(event => {
+                if (event.type === SpecialEvents.REALTIME)
+                   subscription.add(Observable.interval(1000).subscribe(() => scheduler.advanceTo(+this.dateRetriever.getDate())));
+                scheduler.schedule(() => {
+                    observer.next(event);
+                }, +event.timestamp);
+                try {
+                    scheduler.advanceTo(+event.timestamp);
+                } catch (error) {
+                    observer.error(error);
                 }
-            }));
+            }, error => observer.error(error), () => observer.complete()));
+
+            // TODO: think a new way to restore the ticks not in this place
+            this.restoreTicks(query.name, logger);
 
             return subscription;
         });

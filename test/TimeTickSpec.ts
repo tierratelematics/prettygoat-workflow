@@ -1,33 +1,39 @@
 import "reflect-metadata";
 import expect = require("expect.js");
 import {Mock, IMock, It} from "typemoq";
-import {Subject} from "rxjs";
+import {Subject, Subscription} from "rxjs";
 import TickScheduler, {ITickScheduler} from "../scripts/ticks/TickScheduler";
-import {IStreamFactory, Event, SpecialEvents} from "prettygoat";
-import MockDateRetriever from "./fixtures/MockDateRetriever";
+import {IStreamFactory, Event, SpecialEvents, Dictionary, IDateRetriever} from "prettygoat";
 import {TickStreamFactory} from "../scripts/ticks/TickStreamFactory";
+import Tick from "../scripts/ticks/Tick";
 
 describe("TimeTick, given a tick scheduler and a projection", () => {
 
     let tickScheduler: ITickScheduler;
     let streamData: Subject<Event>;
     let notifications: Event[];
-    let dateRetriever: MockDateRetriever;
+    let dateRetriever: IMock<IDateRetriever>;
     let stream: IMock<IStreamFactory>;
     let subject: IStreamFactory;
+    let ticksHolder: Dictionary<Tick[]>;
+    let subscription: Subscription;
 
     beforeEach(() => {
         notifications = [];
-        dateRetriever = new MockDateRetriever(new Date(3000));
-        tickScheduler = new TickScheduler(new MockDateRetriever(new Date(0)));
+        ticksHolder = {};
+        dateRetriever = Mock.ofType<IDateRetriever>();
+        dateRetriever.setup(d => d.getDate()).returns(() => new Date(3000));
+        tickScheduler = new TickScheduler(dateRetriever.object);
         streamData = new Subject<Event>();
         stream = Mock.ofType<IStreamFactory>();
         stream.setup(s => s.from(It.isAny(), It.isAny(), It.isAny())).returns(() => streamData);
         subject = new TickStreamFactory(stream.object, {
             "Mock": tickScheduler
-        }, dateRetriever);
-        subject.from({name: "Mock", manifests: []}, null, null).subscribe(event => notifications.push(event));
+        }, dateRetriever.object, ticksHolder, {});
+        subscription = subject.from({name: "Mock", manifests: []}, null, null).subscribe(event => notifications.push(event));
     });
+
+    afterEach(() => subscription.unsubscribe());
 
     context("when an event is read out of order", () => {
         it("should be processed instantly", () => {
@@ -91,14 +97,20 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
 
         context("when it's past the system clock", () => {
             it("should delay it in the future", (done) => {
-                dateRetriever.setDate(new Date(300));
+                dateRetriever.reset();
+                dateRetriever.setup(d => d.getDate()).returns(() => new Date(300));
+                streamData.next({
+                    type: SpecialEvents.REALTIME, payload: null, timestamp: new Date(110)
+                });
                 tickScheduler.schedule(new Date(500));
+                dateRetriever.reset();
+                dateRetriever.setup(d => d.getDate()).returns(() => new Date(1000));
 
-                expect(notifications[0]).not.to.be.ok();
+                expect(notifications[1]).not.to.be.ok();
                 setTimeout(() => {
-                    expect(notifications[0].payload.clock).to.eql(new Date(500));
+                    expect(notifications[1].payload.clock).to.eql(new Date(500));
                     done();
-                }, 500);
+                }, 1000);
             });
         });
 
@@ -135,18 +147,31 @@ describe("TimeTick, given a tick scheduler and a projection", () => {
         });
 
         context("when the projection is fetching real time events", () => {
-            it("should schedule the tick in the future", (done) => {
+            beforeEach(() => {
+                dateRetriever.reset();
+                dateRetriever.setup(d => d.getDate()).returns(() => new Date(100));
                 streamData.next({
                     type: SpecialEvents.REALTIME, payload: null, timestamp: new Date(110)
                 });
                 tickScheduler.schedule(new Date(150));
-
+                dateRetriever.reset();
+                dateRetriever.setup(d => d.getDate()).returns(() => new Date(1000));
+            });
+            it("should schedule the tick in the future", (done) => {
                 expect(notifications[0].type).to.eql(SpecialEvents.REALTIME);
                 expect(notifications[1]).not.to.be.ok();
                 setTimeout(() => {
                     expect(notifications[1].payload.clock).to.eql(new Date(150));
                     done();
-                }, 200);
+                }, 1000);
+            });
+
+            it("should cache those ticks for snapshots", (done) => {
+                expect(ticksHolder["Mock"]).to.have.length(1);
+                setTimeout(() => {
+                    expect(ticksHolder["Mock"]).to.have.length(0);
+                    done();
+                }, 1000);
             });
         });
     });
