@@ -1,3 +1,7 @@
+# 1.2.0
+
+Snapshot ticks
+
 # 1.1.1
 
 Add contextual logging
