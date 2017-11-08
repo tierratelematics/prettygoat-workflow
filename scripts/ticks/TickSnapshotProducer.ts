@@ -12,7 +12,7 @@ export class TickSnapshotProducer implements ISnapshotProducer {
 
     produce<T>(event: Event): Snapshot<T> {
         let ticks = this.ticksHolder[event.type];
-        let snapshotState: any = { state: event.payload };
+        let snapshotState: any = { projectionState: event.payload };
         if (ticks && ticks.length) snapshotState.ticks = ticks;
         return new Snapshot(snapshotState, event.timestamp, this.filterHolder[event.type].serialize());
     }

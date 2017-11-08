@@ -30,7 +30,7 @@ describe("Given a tick snapshot producer", () => {
         it("should snapshot them", () => {
             expect(subject.produce({
                 type: "Mock2", payload: {count: 10}, timestamp: new Date(20)
-            })).to.eql(new Snapshot<any>({ state: {count: 10}, ticks: [
+            })).to.eql(new Snapshot<any>({ projectionState: {count: 10}, ticks: [
                 { clock: new Date(1), state: undefined}, { clock: new Date(2), state: undefined }
             ]}, new Date(20), [{id: "test", timestamp: new Date(2)}]));
         });
@@ -40,7 +40,7 @@ describe("Given a tick snapshot producer", () => {
         it("should not snapshot them", () => {
             expect(subject.produce({
                 type: "Mock", payload: {count: 10}, timestamp: new Date(20)
-            })).to.eql(new Snapshot({ state: {count: 10}}, new Date(20), [{id: "test", timestamp: new Date(2)}]));
+            })).to.eql(new Snapshot({ projectionState: {count: 10}}, new Date(20), [{id: "test", timestamp: new Date(2)}]));
         });
     });
 });
