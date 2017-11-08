@@ -1,6 +1,6 @@
 class Tick {
     state: string | object;
-    clock: Date | number;
+    clock: Date;
 
     constructor(clock: Date, state?: string | object) {
         this.clock = clock;
