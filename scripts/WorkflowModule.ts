@@ -1,7 +1,7 @@
-import { TickSnapshotProducer } from "./ticks/TickSnapshotProducer";
+import { TickMementoProducer } from "./ticks/TickMementoProducer";
 import {
     IModule, IProjectionRegistry, IServiceLocator, Dictionary, IProjectionFactoryExtender,
-    IStreamFactory, ISnapshotProducer
+    IStreamFactory, IMementoProducer
 } from "prettygoat";
 import {interfaces} from "inversify";
 import {IWorkflowProcessorFactory, WorkflowProcessorFactory} from "./workflow/WorkflowProcessorFactory";
@@ -19,7 +19,7 @@ class WorkflowModule implements IModule {
         container.bind<interfaces.Factory<ITickScheduler>>("Factory<ITickScheduler>").toAutoFactory<ITickScheduler>("ITickScheduler");
         container.bind<IProjectionFactoryExtender>("IProjectionFactoryExtender").to(VirtualTimeExtender).inSingletonScope();
         container.rebind<IStreamFactory>("IProjectionStreamFactory").to(TickStreamFactory).inSingletonScope();
-        container.rebind<ISnapshotProducer>("ISnapshotProducer").to(TickSnapshotProducer).inSingletonScope();
+        container.rebind<IMementoProducer<any>>("IMementoProducer").to(TickMementoProducer).inSingletonScope();
         container.bind<Dictionary<Tick[]>>("SnapshotTicksHolder").toConstantValue({});
     };
 
