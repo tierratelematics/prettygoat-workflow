@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import expect = require("expect.js");
-import {IMock, Mock, Times, It} from "typemoq";
+import {IMock, Mock, Times} from "typemoq";
 import {Redis} from "ioredis";
 import {TransactionLog} from "../scripts/workflow/TransactionLog";
 
@@ -10,7 +10,8 @@ describe("Given a transaction log", () => {
 
     beforeEach(() => {
         redis = Mock.ofType<Redis>();
-        subject = new TransactionLog("myLog", redis.object);
+        subject = new TransactionLog(redis.object);
+        subject.setLogId("myLog");
     });
 
     context("when the log is requested", () => {

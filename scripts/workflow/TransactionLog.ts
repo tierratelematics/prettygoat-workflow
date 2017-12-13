@@ -1,15 +1,25 @@
 import {Redis} from "ioredis";
+import {injectable, inject} from "inversify";
 
 export interface ITransactionLog {
+    setLogId(id: string);
+
     read(): Promise<Date>;
 
     commit(timestamp: Date): Promise<void>;
 }
 
+@injectable()
 export class TransactionLog implements ITransactionLog {
 
-    constructor(private logId: string, private redisClient: Redis) {
+    private logId: string;
 
+    constructor(@inject("RedisClient") private redisClient: Redis) {
+
+    }
+
+    setLogId(id: string) {
+        this.logId = id;
     }
 
     async read(): Promise<Date> {
