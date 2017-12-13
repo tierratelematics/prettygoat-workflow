@@ -9,7 +9,7 @@ import {ITickScheduler, default as TickScheduler} from "./ticks/TickScheduler";
 import {VirtualTimeExtender} from "./ticks/VirtualTimeExtender";
 import {TickStreamFactory} from "./ticks/TickStreamFactory";
 import Tick from "./ticks/Tick";
-import { TransactionLog, ITransactionLog } from "./workflow/TransactionLog";
+import { ITransactionLog } from "./workflow/TransactionLog";
 
 class WorkflowModule implements IModule {
 
@@ -22,7 +22,6 @@ class WorkflowModule implements IModule {
         container.rebind<IStreamFactory>("IProjectionStreamFactory").to(TickStreamFactory).inSingletonScope();
         container.rebind<IMementoProducer<any>>("IMementoProducer").to(TickMementoProducer).inSingletonScope();
         container.bind<Dictionary<Tick[]>>("SnapshotTicksHolder").toConstantValue({});
-        container.bind<ITransactionLog>("ITransactionLog").to(TransactionLog);
         container.bind<interfaces.Factory<ITransactionLog>>("ITransactionLogFactory<Katana>").toAutoFactory<ITransactionLog>("ITransactionLog");
     };
 

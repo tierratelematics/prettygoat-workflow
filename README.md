@@ -10,6 +10,8 @@ $ npm install prettygoat-workflow
 
 Add this code to the boostrapper.
 
+Register also an implementation of an [ITranslationLog](https://github.com/tierratelematics/prettygoat-workflow/blob/master/scripts/workflow/TransactionLog.ts) to save the current timestamp.
+
 ```typescript
 import {WorkflowModule} from "prettygoat-workflow";
 
