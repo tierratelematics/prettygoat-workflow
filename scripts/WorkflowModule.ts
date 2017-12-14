@@ -22,7 +22,7 @@ class WorkflowModule implements IModule {
         container.rebind<IStreamFactory>("IProjectionStreamFactory").to(TickStreamFactory).inSingletonScope();
         container.rebind<IMementoProducer<any>>("IMementoProducer").to(TickMementoProducer).inSingletonScope();
         container.bind<Dictionary<Tick[]>>("SnapshotTicksHolder").toConstantValue({});
-        container.bind<interfaces.Factory<ITransactionLog>>("ITransactionLogFactory<Katana>").toAutoFactory<ITransactionLog>("ITransactionLog");
+        container.bind<interfaces.Factory<ITransactionLog>>("ITransactionLogFactory").toAutoFactory<ITransactionLog>("ITransactionLog");
     };
 
     register(registry: IProjectionRegistry, serviceLocator?: IServiceLocator, overrides?: any) {
