@@ -28,7 +28,7 @@ export class WorkflowProcessor implements IWorkflowProcessor {
 
         try {
             await action();
-            await this.transactionLog.commit(timestamp);
+            await this.transactionLog.commit(timestamp, eventId);
             this.logger.debug(`Updated transaction log to ${timestamp}`);
         } catch (error) {
             this.logger.error(`Side effect for workflow ${this.workflowId} has failed at timestamp ${timestamp}`);

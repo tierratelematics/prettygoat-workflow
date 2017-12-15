@@ -63,9 +63,9 @@ describe("Given a workflow processor", () => {
             });
 
             it("should commit the side effect to the transactions log", async () => {
-                await subject.process(action.object, new Date(6000));
+                await subject.process(action.object, new Date(6000), "event-1");
 
-                transactionLog.verify(r => r.commit(It.isValue(new Date(6000))), Times.once());
+                transactionLog.verify(r => r.commit(It.isValue(new Date(6000)), "event-1"), Times.once());
             });
         });
     });
