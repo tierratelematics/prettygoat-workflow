@@ -50,7 +50,7 @@ class MyWorkflow implements IWorkflowDefinition<void> {
                 "InvitationSent": async (state, payload, event) => {
                     await this.workflowProcessor.process(() => {
                         // Send email
-                    }, event.timestamp);
+                    }, event.timestamp, event.id);
                     return state;
                 }
             }
