@@ -1,7 +1,12 @@
 export interface ITransactionLog {
     setLogId(id: string);
 
-    read(): Promise<Date>;
+    read(): Promise<TransactionData>;
 
-    commit(timestamp: Date): Promise<void>;
+    commit(timestamp: Date, eventId?: string): Promise<void>;
+}
+
+export type TransactionData = {
+    lastTransaction: Date;
+    eventId: string;
 }

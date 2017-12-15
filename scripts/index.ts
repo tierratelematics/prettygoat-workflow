@@ -6,4 +6,4 @@ export {IWorkflowProcessor} from "./workflow/WorkflowProcessor";
 export {ITickScheduler} from "./ticks/TickScheduler";
 export {default as Tick} from "./ticks/Tick";
 export {default as WorkflowModule} from "./WorkflowModule";
-export { ITransactionLog } from "./workflow/TransactionLog";
+export { ITransactionLog, TransactionData } from "./workflow/TransactionLog";
