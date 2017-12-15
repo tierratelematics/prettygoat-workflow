@@ -1,3 +1,9 @@
+# 2.0.0
+
+* Add configurable transaction log
+* Remove redis
+* Commit event id to transaction log
+
 # 1.3.0
 
 Add tick memento producer
