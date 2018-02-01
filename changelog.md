@@ -1,3 +1,7 @@
+# 3.0.0
+
+* Bump prettygoat
+
 # 2.0.0
 
 * Add configurable transaction log
